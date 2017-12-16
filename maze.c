@@ -2,9 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-char mapa[31][31];
+char map[31][31];
 int rgb[100][3], farbaM[100][100], filter[100];
-int n, m, k = 1;
+int row_amount, column_amount, k = 1;
 
 #pragma pack(push, 1)
 
@@ -32,7 +32,7 @@ struct BitmapInfoHeader {
   unsigned long biClrImportant;
 };
 
-void write_head(FILE *f, int width, int height)
+void write_head(FILE *file, int width, int height)
 {
   if (width % 4 != 0 || height % 4 != 0)
   {
@@ -59,45 +59,45 @@ void write_head(FILE *f, int width, int height)
   bfh.bfReserved2 = 0;
   bfh.bfOffBits = sizeof(struct BitmapFileHeader) + bih.biSize;
 
-  fwrite(&bfh, sizeof(struct BitmapFileHeader), 1, f);
-  fwrite(&bih, sizeof(struct BitmapInfoHeader), 1, f);
+  fwrite(&bfh, sizeof(struct BitmapFileHeader), 1, file);
+  fwrite(&bih, sizeof(struct BitmapInfoHeader), 1, file);
 }
 
-void write_pixel(FILE *f, unsigned char r, unsigned char g, unsigned char b)
+void write_pixel(FILE *file, unsigned char r, unsigned char g, unsigned char b)
 {
-  fwrite(&r, 1, 1, f);
-  fwrite(&g, 1, 1, f);
-  fwrite(&b, 1, 1, f);
+  fwrite(&r, 1, 1, file);
+  fwrite(&g, 1, 1, file);
+  fwrite(&b, 1, 1, file);
 }
 
 void draw_map_base(char *file_name)
 {
-  FILE *f = fopen(file_name, "wb");
-  int width = 40 * m, height = 40 * n;
-  write_head(f, width, height);
+  FILE *file = fopen(file_name, "wb");
+  int width = 40 * column_amount, height = 40 * row_amount;
+  write_head(file, width, height);
 
   int row, column;
   for (column = 0; column < height; column++)
     for (row = 0; row < width; row++)
     {
       int i = (height-column)/40, j = row/40;
-      switch (mapa[i][j])
+      switch (map[i][j])
       {
-        case 'T': write_pixel(f, 0, 0, 255); break;
-        case 'X': write_pixel(f, 255, 0, 0); break;
-        case '#': write_pixel(f, 0, 0, 0); break;
-        case '.': write_pixel(f, 255, 255, 255); break;
-        default: write_pixel(f, 128, 128, 128); break;
+        case 'T': write_pixel(file, 0, 0, 255); break;
+        case 'X': write_pixel(file, 255, 0, 0); break;
+        case '#': write_pixel(file, 0, 0, 0); break;
+        case '.': write_pixel(file, 255, 255, 255); break;
+        default: write_pixel(file, 128, 128, 128); break;
       }
     }
-  fclose(f);
+  fclose(file);
 }
 
 void kresli_miestnosti(char *file_name)
 {
-  FILE *f = fopen(file_name, "wb");
-  int width = 40 * m, height = 40 * n;
-  write_head(f, width, height);
+  FILE *file = fopen(file_name, "wb");
+  int width = 40 * column_amount, height = 40 * row_amount;
+  write_head(file, width, height);
 
   int row, column;
   for (column = 0; column < height; column++)
@@ -105,16 +105,16 @@ void kresli_miestnosti(char *file_name)
     {
       int i = (height-column)/40, j = row/40;
       int c = farbaM[i][j];
-      switch (mapa[i][j])
+      switch (map[i][j])
       {
-        case 'T': write_pixel(f, 0, 0, 255); break;
-        case 'X': write_pixel(f, 255, 0, 0); break;
-        case '#': write_pixel(f, 0, 0, 0); break;
-        case '.': write_pixel(f, rgb[c][0], rgb[c][1], rgb[c][2]); break;
-        default: write_pixel(f, 128, 128, 128); break;
+        case 'T': write_pixel(file, 0, 0, 255); break;
+        case 'X': write_pixel(file, 255, 0, 0); break;
+        case '#': write_pixel(file, 0, 0, 0); break;
+        case '.': write_pixel(file, rgb[c][0], rgb[c][1], rgb[c][2]); break;
+        default: write_pixel(file, 128, 128, 128); break;
       }
     }
-  fclose(f);
+  fclose(file);
 }
 
 struct Prvok
@@ -176,18 +176,18 @@ void vypis_susednosti()
     for(i=0; i<26; i++)
       bod[i] = 0;
 
-    for (i = 0; i < n; i++)
-      for (j = 0; j < m; j++)
+    for (i = 0; i < row_amount; i++)
+      for (j = 0; j < column_amount; j++)
         if (farbaM[i][j] == q)
         {
-          if(mapa[i+1][j] >= 'A' && mapa[i+1][j] <= 'Z')
-            bod[mapa[i+1][j] - 'A'] = 1;
-          if(mapa[i-1][j] >= 'A' && mapa[i-1][j] <= 'Z')
-            bod[mapa[i-1][j] - 'A'] = 1;
-          if(mapa[i][j+1] >= 'A' && mapa[i][j+1] <= 'Z')
-            bod[mapa[i][j+1] - 'A'] = 1;
-          if(mapa[i][j-1] >= 'A' && mapa[i][j-1] <= 'Z')
-            bod[mapa[i][j-1] - 'A'] = 1;
+          if(map[i+1][j] >= 'A' && map[i+1][j] <= 'Z')
+            bod[map[i+1][j] - 'A'] = 1;
+          if(map[i-1][j] >= 'A' && map[i-1][j] <= 'Z')
+            bod[map[i-1][j] - 'A'] = 1;
+          if(map[i][j+1] >= 'A' && map[i][j+1] <= 'Z')
+            bod[map[i][j+1] - 'A'] = 1;
+          if(map[i][j-1] >= 'A' && map[i][j-1] <= 'Z')
+            bod[map[i][j-1] - 'A'] = 1;
         }
     for (i=0; i<26; i++)
       for (j=0; j<26; j++)
@@ -218,33 +218,33 @@ void prechod (int vb, int pocet)
 void kresli_mapu (char *file_name, int k)
 {
   prechod ('T', k);
-  FILE *f = fopen(file_name, "wb");
-  int width = 40 * m, height = 40 * n;
-  write_head(f, width, height);
+  FILE *file = fopen(file_name, "wb");
+  int width = 40 * column_amount, height = 40 * row_amount;
+  write_head(file, width, height);
 
   int row, column;
   for (column = 0; column < height; column++)
     for (row = 0; row < width; row++)
     {
       int i = (height-column)/40, j = row/40;
-      switch (mapa[i][j])
+      switch (map[i][j])
       {
-        case 'T': write_pixel(f, 0, 0, 255); break;
-        case 'X': write_pixel(f, 255, 0, 0); break;
-        case '#': write_pixel(f, 0, 0, 0); break;
+        case 'T': write_pixel(file, 0, 0, 255); break;
+        case 'X': write_pixel(file, 255, 0, 0); break;
+        case '#': write_pixel(file, 0, 0, 0); break;
         case '.':
           if(filter[farbaM[i][j]])
-            write_pixel(f, 64, 255, 64);
+            write_pixel(file, 64, 255, 64);
           else
-            write_pixel(f, 255, 255, 255); break;
-        default: write_pixel(f, 128, 128, 128); break;
+            write_pixel(file, 255, 255, 255); break;
+        default: write_pixel(file, 128, 128, 128); break;
       }
     }
 }
 
 int hladaj(int r, int s, int c)
 {
-  if( r < 0 || r >= n || s < 0 || s >= m || mapa[r][s] != '.' || farbaM[r][s])
+  if( r < 0 || r >= row_amount || s < 0 || s >= column_amount || map[r][s] != '.' || farbaM[r][s])
     return 0;
   farbaM[r][s] = c;
   hladaj(r+1, s, c);
@@ -259,29 +259,29 @@ int nacitaj_mapu()
 {
   int dlzka;
   char predosly = 0;
-  m = 0; n = 0;
-  while((mapa[n][m] = getchar()) > 0)
+  column_amount = 0; row_amount = 0;
+  while((map[row_amount][column_amount] = getchar()) > 0)
   {
-    if ((predosly == mapa[n][m]) && (predosly == '\n'))
+    if ((predosly == map[row_amount][column_amount]) && (predosly == '\n'))
     {
-        m = dlzka;
+        column_amount = dlzka;
         return 1;
     }
-    predosly = mapa[n][m];
-    if (mapa[n][m] == '\n')
+    predosly = map[row_amount][column_amount];
+    if (map[row_amount][column_amount] == '\n')
     {
-          n++;
-          dlzka = m;
-          m = 0;
+          row_amount++;
+          dlzka = column_amount;
+          column_amount = 0;
           continue;
     }
-    m++;
+    column_amount++;
   }
-  if (n++>0 && m>0) return 1;
+  if (row_amount++>0 && column_amount>0) return 1;
   return 0;
 }
 
-void inicializacia()
+void initialize()
 {
   int i, j;
   for (i=0; i<100; i++)
@@ -290,16 +290,16 @@ void inicializacia()
       rgb[i][1] = rand() % 256;
       rgb[i][2] = rand() % 256;
   }
-  for (i = 0; i < n; i++)
+  for (i = 0; i < row_amount; i++)
   {
-    for (j=0; j < m; j++)
+    for (j=0; j < column_amount; j++)
       if(hladaj(i,j,k))
         k++;
   }
-  for (i = 0; i < n; i++)
+  for (i = 0; i < row_amount; i++)
   {
-    for (j=0; j < m; j++)
-      printf("%c", mapa[i][j]);
+    for (j=0; j < column_amount; j++)
+      printf("%c", map[i][j]);
     printf("\n");
   }
   printf("\n");
@@ -308,9 +308,9 @@ void inicializacia()
 void vykresli_farby()
 {
   int i,j;
-  for(i=0; i<n; i++)
+  for(i=0; i<row_amount; i++)
   {
-    for(j=0;j<m;j++)
+    for(j=0;j<column_amount;j++)
       printf("%3d", farbaM[i][j]);
     printf("\n");
   }
@@ -321,7 +321,7 @@ int main(void)
 {
   while (nacitaj_mapu() == 1)
   {
-  inicializacia();
+  initialize();
   draw_map_base("plan_mapy.bmp");
   kresli_miestnosti("miestnosti.bmp");
   vypis_susednosti();
