@@ -1,6 +1,3 @@
-// projekt2.c -- Projekt2 - Tezeus a Minotaurus
-// Michal Moravcik, 19.4.2017 15:19:45
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -10,6 +7,7 @@ int rgb[100][3], farbaM[100][100], filter[100];
 int n, m, k = 1;
 
 #pragma pack(push, 1)
+
 struct BitmapFileHeader {
   unsigned short bfType;
   unsigned long bfSize;
@@ -196,7 +194,7 @@ void vypis_susednosti()
         if (i != j && bod[i] && bod[j])
           zoznam_vloz(z[i], 'A' + j, q);
   }
-  //vypisujem spajany zoznam pre kazde pismeno
+
   for(i=0; i<26; i++)
   {
     zoznam_vypis(z[i]);
@@ -220,7 +218,6 @@ void prechod (int vb, int pocet)
 void kresli_mapu (char *nazov_suboru, int k)
 {
   prechod ('T', k);
-  //vytvorenie a vpisanie hlavicky do bmp suboru
   FILE *f = fopen(nazov_suboru, "wb");
   int w = 40 * m, h = 40 * n;
   write_head(f, w, h);
