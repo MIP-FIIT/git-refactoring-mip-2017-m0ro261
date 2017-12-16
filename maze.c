@@ -2,10 +2,13 @@
 #include <string.h>
 #include <stdlib.h>
 
+//Global variables and arrays that aren't possible to avoid, without overcomplicating the code
 char map[31][31];
-int rgb[100][3], farbaM[100][100], filter[100];
+int rgb[100][3], map_tile_color[100][100], filter[100];
 int row_amount, column_amount, k = 1;
 
+//Structures to help create complex header of BMP file
+//Not so important to understand from the code, as it is all based by BMP specifications and definitions
 #pragma pack(push, 1)
 
 struct BitmapFileHeader {
@@ -32,6 +35,7 @@ struct BitmapInfoHeader {
   unsigned long biClrImportant;
 };
 
+//Creating BMP header based on wiki definitions using previously defined structures
 void write_head(FILE *file, int width, int height)
 {
   if (width % 4 != 0 || height % 4 != 0)
@@ -63,11 +67,12 @@ void write_head(FILE *file, int width, int height)
   fwrite(&bih, sizeof(struct BitmapInfoHeader), 1, file);
 }
 
-void write_pixel(FILE *file, unsigned char r, unsigned char g, unsigned char b)
+//Function to write one pixel of the specific color to the file
+void write_pixel(FILE *file, unsigned char red, unsigned char green, unsigned char blue)
 {
-  fwrite(&r, 1, 1, file);
-  fwrite(&g, 1, 1, file);
-  fwrite(&b, 1, 1, file);
+  fwrite(&red, 1, 1, file);
+  fwrite(&green, 1, 1, file);
+  fwrite(&blue, 1, 1, file);
 }
 
 void draw_map_base(char *file_name)
@@ -80,8 +85,9 @@ void draw_map_base(char *file_name)
   for (column = 0; column < height; column++)
     for (row = 0; row < width; row++)
     {
-      int i = (height-column)/40, j = row/40;
-      switch (map[i][j])
+      int column_number = (height-column)/40, row_number = row/40;
+	  
+      switch (map[column_number][row_number])
       {
         case 'T': write_pixel(file, 0, 0, 255); break;
         case 'X': write_pixel(file, 255, 0, 0); break;
@@ -93,7 +99,8 @@ void draw_map_base(char *file_name)
   fclose(file);
 }
 
-void kresli_miestnosti(char *file_name)
+//Function to draw actual rooms, based on input into BMP file
+void draw_rooms(char *file_name)
 {
   FILE *file = fopen(file_name, "wb");
   int width = 40 * column_amount, height = 40 * row_amount;
@@ -103,20 +110,21 @@ void kresli_miestnosti(char *file_name)
   for (column = 0; column < height; column++)
     for (row = 0; row < width; row++)
     {
-      int i = (height-column)/40, j = row/40;
-      int c = farbaM[i][j];
-      switch (map[i][j])
+      int column_number = (height-column)/40, row_number = row/40;
+      int color = map_tile_color[column_number][row_number];
+	  
+      switch (map[column_number][row_number])
       {
         case 'T': write_pixel(file, 0, 0, 255); break;
         case 'X': write_pixel(file, 255, 0, 0); break;
         case '#': write_pixel(file, 0, 0, 0); break;
-        case '.': write_pixel(file, rgb[c][0], rgb[c][1], rgb[c][2]); break;
+        case '.': write_pixel(file, rgb[color][0], rgb[color][1], rgb[color][2]); break;
         default: write_pixel(file, 128, 128, 128); break;
       }
     }
   fclose(file);
 }
-
+//Set of LinkedList definitions, and functions to work with them
 struct Prvok
 {
   char ciel;
@@ -154,70 +162,77 @@ void zoznam_vloz(struct Zoznam *z, char ciel, int farba)
 void zoznam_vypis(struct Zoznam *z)
 {
   struct Prvok *p = z->prvy;
-  printf ("%c: ", z->meno);
+  printf ("%color: ", z->meno);
   while(p != NULL)
   {
-    printf(" %c", p->ciel);
+    printf(" %color", p->ciel);
     p = p->dalsi;
   }
 }
 
-struct Zoznam *z[26];
+struct Zoznam *z[26]; //Global declaration of the list of structures
 
-void vypis_susednosti()
+void find_adjacency()
 {
-  int i, j;
-  for(i=0; i<26; i++)
-    z[i] = zoznam_vytvor('A' + i);
-  int q;
-  for (q = 1; q < k; q++)
+  int count, count_r, column_number, row_number;
+  
+  for(count=0; count<26; count++)
+    z[count] = zoznam_vytvor('A' + count);
+
+  int actual_color;
+  for (actual_color = 1; actual_color < k; actual_color++)
   {
     int bod[26];
-    for(i=0; i<26; i++)
-      bod[i] = 0;
+    for(count=0; count<26; count++)
+      bod[count] = 0;
 
-    for (i = 0; i < row_amount; i++)
-      for (j = 0; j < column_amount; j++)
-        if (farbaM[i][j] == q)
+    for (column_number = 0; column_number < row_amount; column_number++)
+      for (row_number = 0; row_number < column_amount; row_number++)
+        if (map_tile_color[column_number][row_number] == actual_color)
         {
-          if(map[i+1][j] >= 'A' && map[i+1][j] <= 'Z')
-            bod[map[i+1][j] - 'A'] = 1;
-          if(map[i-1][j] >= 'A' && map[i-1][j] <= 'Z')
-            bod[map[i-1][j] - 'A'] = 1;
-          if(map[i][j+1] >= 'A' && map[i][j+1] <= 'Z')
-            bod[map[i][j+1] - 'A'] = 1;
-          if(map[i][j-1] >= 'A' && map[i][j-1] <= 'Z')
-            bod[map[i][j-1] - 'A'] = 1;
+          if(map[column_number+1][row_number] >= 'A' && map[column_number+1][row_number] <= 'Z')
+            bod[map[column_number+1][row_number] - 'A'] = 1;
+		
+          if(map[column_number-1][row_number] >= 'A' && map[column_number-1][row_number] <= 'Z')
+            bod[map[column_number-1][row_number] - 'A'] = 1;
+		
+          if(map[column_number][row_number+1] >= 'A' && map[column_number][row_number+1] <= 'Z')
+            bod[map[column_number][row_number+1] - 'A'] = 1;
+		
+          if(map[column_number][row_number-1] >= 'A' && map[column_number][row_number-1] <= 'Z')
+            bod[map[column_number][row_number-1] - 'A'] = 1;
         }
-    for (i=0; i<26; i++)
-      for (j=0; j<26; j++)
-        if (i != j && bod[i] && bod[j])
-          zoznam_vloz(z[i], 'A' + j, q);
+		
+    for (count=0; count<26; count++)
+      for (count_r=0; count_r<26; count_r++)
+        if (count != count_r && bod[count] && bod[count_r])
+          zoznam_vloz(z[count], 'A' + count_r, actual_color);
   }
 
-  for(i=0; i<26; i++)
+  for(count=0; count<26; count++)
   {
-    zoznam_vypis(z[i]);
+    zoznam_vypis(z[count]);
     printf("\n");
   }
 }
 
-void prechod (int vb, int pocet)
+void possible_distance (int start_position, int distance)
 {
-  if (pocet == 0)
+  if (distance == 0)
     return;
-  struct Prvok *p = z[vb - 'A']->prvy;
+
+  struct Prvok *p = z[start_position - 'A']->prvy;
   while (p)
   {
     filter[p->farba] = 1;
-    prechod(p->ciel, pocet-1);
+    possible_distance(p->ciel, distance-1);
     p = p->dalsi;
   }
 }
 
-void kresli_mapu (char *file_name, int k)
+void draw_final_map (char *file_name, int distance)
 {
-  prechod ('T', k);
+  possible_distance ('T', distance);
   FILE *file = fopen(file_name, "wb");
   int width = 40 * column_amount, height = 40 * row_amount;
   write_head(file, width, height);
@@ -226,14 +241,15 @@ void kresli_mapu (char *file_name, int k)
   for (column = 0; column < height; column++)
     for (row = 0; row < width; row++)
     {
-      int i = (height-column)/40, j = row/40;
-      switch (map[i][j])
+      int column_number = (height-column)/40, row_number = row/40;
+	  
+      switch (map[column_number][row_number])
       {
         case 'T': write_pixel(file, 0, 0, 255); break;
         case 'X': write_pixel(file, 255, 0, 0); break;
         case '#': write_pixel(file, 0, 0, 0); break;
         case '.':
-          if(filter[farbaM[i][j]])
+          if(filter[map_tile_color[column_number][row_number]])
             write_pixel(file, 64, 255, 64);
           else
             write_pixel(file, 255, 255, 255); break;
@@ -242,36 +258,37 @@ void kresli_mapu (char *file_name, int k)
     }
 }
 
-int hladaj(int r, int s, int c)
+int search(int column, int row, int color)
 {
-  if( r < 0 || r >= row_amount || s < 0 || s >= column_amount || map[r][s] != '.' || farbaM[r][s])
+  if( row < 0 || row >= row_amount || column < 0 || column >= column_amount || map[row][column] != '.' || map_tile_color[row][column])
     return 0;
-  farbaM[r][s] = c;
-  hladaj(r+1, s, c);
-  hladaj(r-1, s, c);
-  hladaj(r, s+1, c);
-  hladaj(r, s-1, c);
+
+  map_tile_color[row][column] = color;
+  search(row+1, column, color);
+  search(row-1, column, color);
+  search(row, column+1, color);
+  search(row, column-1, color);
   return 1;
 }
 
 
-int nacitaj_mapu()
+int load_plan()
 {
-  int dlzka;
-  char predosly = 0;
+  int length;
+  char previous = 0;
   column_amount = 0; row_amount = 0;
   while((map[row_amount][column_amount] = getchar()) > 0)
   {
-    if ((predosly == map[row_amount][column_amount]) && (predosly == '\n'))
+    if ((previous == map[row_amount][column_amount]) && (previous == '\n'))
     {
-        column_amount = dlzka;
+        column_amount = length;
         return 1;
     }
-    predosly = map[row_amount][column_amount];
+    previous = map[row_amount][column_amount];
     if (map[row_amount][column_amount] == '\n')
     {
           row_amount++;
-          dlzka = column_amount;
+          length = column_amount;
           column_amount = 0;
           continue;
     }
@@ -283,35 +300,35 @@ int nacitaj_mapu()
 
 void initialize()
 {
-  int i, j;
-  for (i=0; i<100; i++)
+  int count, column_number, row_number;
+  for (count=0; count<100; count++)
   {
-      rgb[i][0] = rand() % 256;
-      rgb[i][1] = rand() % 256;
-      rgb[i][2] = rand() % 256;
+      rgb[count][0] = rand() % 256;
+      rgb[count][1] = rand() % 256;
+      rgb[count][2] = rand() % 256;
   }
-  for (i = 0; i < row_amount; i++)
+  for (column_number = 0; column_number < row_amount; column_number++)
   {
-    for (j=0; j < column_amount; j++)
-      if(hladaj(i,j,k))
-        k++;
+    for (row_number=0; row_number < column_amount; row_number++)
+      if(search(column_number,row_number,distance))
+        distance++;
   }
-  for (i = 0; i < row_amount; i++)
+  for (column_number = 0; column_number < row_amount; column_number++)
   {
-    for (j=0; j < column_amount; j++)
-      printf("%c", map[i][j]);
+    for (row_number=0; row_number < column_amount; row_number++)
+      printf("%color", map[column_number][row_number]);
     printf("\n");
   }
   printf("\n");
 }
 
-void vykresli_farby()
+void draw_colors()
 {
-  int i,j;
-  for(i=0; i<row_amount; i++)
+  int column_number,row_number;
+  for(column_number=0; column_number<row_amount; column_number++)
   {
-    for(j=0;j<column_amount;j++)
-      printf("%3d", farbaM[i][j]);
+    for(row_number=0;row_number<column_amount;row_number++)
+      printf("%3d", map_tile_color[column_number][row_number]);
     printf("\n");
   }
   printf("\n");
@@ -319,13 +336,13 @@ void vykresli_farby()
 
 int main(void)
 {
-  while (nacitaj_mapu() == 1)
+  while (load_plan() == 1)
   {
   initialize();
   draw_map_base("plan_mapy.bmp");
-  kresli_miestnosti("miestnosti.bmp");
-  vypis_susednosti();
-  kresli_mapu ("mapa_final.bmp", 2);
+  draw_rooms("miestnosti.bmp");
+  find_adjacency();
+  draw_final_map ("mapa_final.bmp", 2);
   }
   return 0;
 }
