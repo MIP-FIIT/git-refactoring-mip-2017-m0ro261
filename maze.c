@@ -70,17 +70,17 @@ void write_pixel(FILE *f, unsigned char r, unsigned char g, unsigned char b)
   fwrite(&b, 1, 1, f);
 }
 
-void kresli_plan_mapy(char *nazov_suboru)
+void draw_map_base(char *file_name)
 {
-  FILE *f = fopen(nazov_suboru, "wb");
-  int w = 40 * m, h = 40 * n;
-  write_head(f, w, h);
+  FILE *f = fopen(file_name, "wb");
+  int width = 40 * m, height = 40 * n;
+  write_head(f, width, height);
 
-  int x, y;
-  for (y = 0; y < h; y++)
-    for (x = 0; x < w; x++)
+  int row, column;
+  for (column = 0; column < height; column++)
+    for (row = 0; row < width; row++)
     {
-      int i = (h-y)/40, j = x/40;
+      int i = (height-column)/40, j = row/40;
       switch (mapa[i][j])
       {
         case 'T': write_pixel(f, 0, 0, 255); break;
@@ -93,17 +93,17 @@ void kresli_plan_mapy(char *nazov_suboru)
   fclose(f);
 }
 
-void kresli_miestnosti(char *nazov_suboru)
+void kresli_miestnosti(char *file_name)
 {
-  FILE *f = fopen(nazov_suboru, "wb");
-  int w = 40 * m, h = 40 * n;
-  write_head(f, w, h);
+  FILE *f = fopen(file_name, "wb");
+  int width = 40 * m, height = 40 * n;
+  write_head(f, width, height);
 
-  int x, y;
-  for (y = 0; y < h; y++)
-    for (x = 0; x < w; x++)
+  int row, column;
+  for (column = 0; column < height; column++)
+    for (row = 0; row < width; row++)
     {
-      int i = (h-y)/40, j = x/40;
+      int i = (height-column)/40, j = row/40;
       int c = farbaM[i][j];
       switch (mapa[i][j])
       {
@@ -215,18 +215,18 @@ void prechod (int vb, int pocet)
   }
 }
 
-void kresli_mapu (char *nazov_suboru, int k)
+void kresli_mapu (char *file_name, int k)
 {
   prechod ('T', k);
-  FILE *f = fopen(nazov_suboru, "wb");
-  int w = 40 * m, h = 40 * n;
-  write_head(f, w, h);
+  FILE *f = fopen(file_name, "wb");
+  int width = 40 * m, height = 40 * n;
+  write_head(f, width, height);
 
-  int x, y;
-  for (y = 0; y < h; y++)
-    for (x = 0; x < w; x++)
+  int row, column;
+  for (column = 0; column < height; column++)
+    for (row = 0; row < width; row++)
     {
-      int i = (h-y)/40, j = x/40;
+      int i = (height-column)/40, j = row/40;
       switch (mapa[i][j])
       {
         case 'T': write_pixel(f, 0, 0, 255); break;
@@ -322,7 +322,7 @@ int main(void)
   while (nacitaj_mapu() == 1)
   {
   inicializacia();
-  kresli_plan_mapy("plan_mapy.bmp");
+  draw_map_base("plan_mapy.bmp");
   kresli_miestnosti("miestnosti.bmp");
   vypis_susednosti();
   kresli_mapu ("mapa_final.bmp", 2);
