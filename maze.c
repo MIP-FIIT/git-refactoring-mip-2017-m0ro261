@@ -298,14 +298,18 @@ int load_plan()
   return 0;
 }
 
+void random_color(){
+	return rand() % 256;
+}
+
 void initialize()
 {
   int count, column_number, row_number;
   for (count=0; count<100; count++)
   {
-      rgb[count][0] = rand() % 256;
-      rgb[count][1] = rand() % 256;
-      rgb[count][2] = rand() % 256;
+      rgb[count][0] = random_color;
+      rgb[count][1] = random_color;
+      rgb[count][2] = random_color;
   }
   for (column_number = 0; column_number < row_amount; column_number++)
   {
@@ -316,7 +320,7 @@ void initialize()
   for (column_number = 0; column_number < row_amount; column_number++)
   {
     for (row_number=0; row_number < column_amount; row_number++)
-      printf("%color", map[column_number][row_number]);
+      printf("%d", map[column_number][row_number]);
     printf("\n");
   }
   printf("\n");
